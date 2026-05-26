@@ -77,12 +77,6 @@ const Home = () => {
     fetchAll();
   }, [user]);
 
-  useEffect(() => {
-    if (inView && hasMore && !loading) {
-      fetchMore();
-    }
-  }, [inView, hasMore, loading]);
-
   const fetchMore = async (reset = false, currentFilters = filters) => {
     try {
       const currentSkip = reset ? 0 : page * 20;
@@ -97,18 +91,27 @@ const Home = () => {
 
       const res = await api.get(url);
       
-      if (res.data.length === 0) {
-        setHasMore(false);
-        if (reset) setDiscover([]);
+      if (reset) {
+        setDiscover(res.data);
+        setPage(1);
       } else {
-        setDiscover(prev => reset ? res.data : [...prev, ...res.data]);
-        setPage(p => reset ? 1 : p + 1);
-        setHasMore(res.data.length === 20);
+        setDiscover(prev => [...prev, ...res.data]);
+        setPage(p => p + 1);
+      }
+      
+      if (res.data.length < 20) {
+        setHasMore(false);
       }
     } catch (err) {
-      console.error('Failed to fetch movies');
+      console.error('Error fetching more movies', err);
     }
   };
+
+  useEffect(() => {
+    if (inView && hasMore && !loading) {
+      fetchMore();
+    }
+  }, [inView, hasMore, loading]);
 
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
