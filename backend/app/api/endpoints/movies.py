@@ -159,34 +159,36 @@ def search_movies(
 
 @router.get("/{movie_id}/trailer")
 def get_movie_trailer(movie_id: int, db: Session = Depends(get_db)):
-    """Fetches the pre-mapped YouTube trailer key for a given movie."""
-    import os
-    import json
+    """Fetches the real YouTube trailer key from TMDB for a given movie."""
+    import requests
     
     movie = db.query(Movie).filter(Movie.id == movie_id).first()
     if not movie:
         raise HTTPException(status_code=404, detail="Movie not found")
         
-    json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "trailer_links.json")
-    
-    # Clean up path to absolute root of backend folder
-    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-    json_path = os.path.join(backend_dir, "trailer_links.json")
-
-    # Default fallback video
+    # Default fallback video (Dearyou) just in case TMDB fails
     fallback_key = "Ywyei5orJ2M"
 
     try:
-        if os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                links = json.load(f)
-                video_id = links.get(str(movie_id))
-                if video_id:
-                    return {"key": video_id, "name": f"{movie.title} Trailer"}
-    except Exception as e:
-        print(f"Error reading trailer JSON: {e}")
+        url = f"{settings.TMDB_BASE_URL}/movie/{movie.tmdb_id}/videos?api_key={settings.TMDB_API_KEY}"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        videos = response.json().get("results", [])
         
-    # If not mapped yet, just return the fallback immediately
+        # Look for the official trailer
+        for video in videos:
+            if video.get("site") == "YouTube" and video.get("type") == "Trailer":
+                return {"key": video.get("key"), "name": video.get("name")}
+                
+        # If no trailer found, look for a Teaser
+        for video in videos:
+            if video.get("site") == "YouTube" and video.get("type") == "Teaser":
+                return {"key": video.get("key"), "name": video.get("name")}
+                
+    except Exception as e:
+        print(f"Error fetching trailer from TMDB: {e}")
+        
+    # If TMDB has no video or request fails, return fallback
     return {"key": fallback_key, "name": f"{movie.title} Trailer (Fallback)"}
 
 @router.get("/{movie_id}/similar", response_model=List[MovieResponse])
