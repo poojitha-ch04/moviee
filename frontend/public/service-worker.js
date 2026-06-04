@@ -1,5 +1,5 @@
-const CACHE_NAME = 'moviee-v1';
-const API_CACHE_NAME = 'moviee-api-v1';
+const CACHE_NAME = 'moviee-v2';
+const API_CACHE_NAME = 'moviee-api-v2';
 
 // Assets to cache immediately
 const PRECACHE_ASSETS = [
@@ -49,11 +49,18 @@ self.addEventListener('fetch', (event) => {
           const cachedResponse = await caches.match(event.request);
           if (cachedResponse) return cachedResponse;
           
-          // Return empty array for failed API calls if no cache
           return new Response(JSON.stringify([]), {
             headers: { 'Content-Type': 'application/json' }
           });
         })
+    );
+    return;
+  }
+
+  // HTML Strategy (Routing): Network First!
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
     );
     return;
   }
@@ -64,7 +71,6 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) return cachedResponse;
       
       return fetch(event.request).then((response) => {
-        // Cache images aggressively
         if (event.request.destination === 'image') {
           const clonedResponse = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -73,8 +79,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
-    }).catch(() => {
-      // If offline and request fails, we can return a fallback
-    })
+    }).catch(() => {})
   );
 });
