@@ -30,6 +30,9 @@ const Home = () => {
   const [comedy, setComedy] = useState([]);
   const [drama, setDrama] = useState([]);
   const [scifi, setScifi] = useState([]);
+  const [telugu, setTelugu] = useState([]);
+  const [hindi, setHindi] = useState([]);
+  const [english, setEnglish] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [discover, setDiscover] = useState([]);
   const [activeParties, setActiveParties] = useState([]);
@@ -46,13 +49,16 @@ const Home = () => {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [trendRes, topRes, actionRes, comedyRes, dramaRes, scifiRes, partiesRes] = await Promise.all([
+        const [trendRes, topRes, actionRes, comedyRes, dramaRes, scifiRes, teRes, hiRes, enRes, partiesRes] = await Promise.all([
           api.get('/movies/trending'),
           api.get('/movies/top-rated'),
           api.get('/movies/by-genre/Action'),
           api.get('/movies/by-genre/Comedy'),
           api.get('/movies/by-genre/Drama'),
           api.get('/movies/by-genre/Sci-Fi'),
+          api.get('/movies/by-language/te'),
+          api.get('/movies/by-language/hi'),
+          api.get('/movies/by-language/en'),
           api.get('/watch-party/active')
         ]);
         setTrending(trendRes.data);
@@ -61,6 +67,9 @@ const Home = () => {
         setComedy(comedyRes.data);
         setDrama(dramaRes.data);
         setScifi(scifiRes.data);
+        setTelugu(teRes.data);
+        setHindi(hiRes.data);
+        setEnglish(enRes.data);
         setActiveParties(partiesRes.data);
         if (trendRes.data.length > 0) setHero(trendRes.data[0]);
 
@@ -234,6 +243,9 @@ const Home = () => {
               </div>
             )}
             {!hasActiveFilters && <MovieRow title="🔥 Trending Now" movies={trending} />}
+            {!hasActiveFilters && telugu.length > 0 && <MovieRow title="🎬 Tollywood Hits (Telugu)" movies={telugu} />}
+            {!hasActiveFilters && hindi.length > 0 && <MovieRow title="✨ Bollywood Blockbusters (Hindi)" movies={hindi} />}
+            {!hasActiveFilters && english.length > 0 && <MovieRow title="🌟 Hollywood Highlights (English)" movies={english} />}
             {!hasActiveFilters && <MovieRow title="⭐ Top Rated" movies={topRated} />}
             {!hasActiveFilters && <MovieRow title="💥 Action & Adventure" movies={action} />}
             {!hasActiveFilters && <MovieRow title="😂 Comedy" movies={comedy} />}

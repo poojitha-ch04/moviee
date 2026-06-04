@@ -65,6 +65,11 @@ def get_by_genre(genre: str, db: Session = Depends(get_db)):
     movies = db.query(Movie).filter(Movie.genre.ilike(f"%{genre}%")).limit(20).all()
     return movies
 
+@router.get("/by-language/{language}", response_model=List[MovieResponse])
+def get_by_language(language: str, db: Session = Depends(get_db)):
+    movies = db.query(Movie).filter(Movie.language == language).order_by(Movie.vote_average.desc()).limit(20).all()
+    return movies
+
 @router.get("/search/smart", response_model=List[MovieResponse])
 def smart_search_movies(q: str, db: Session = Depends(get_db)):
     import google.generativeai as genai

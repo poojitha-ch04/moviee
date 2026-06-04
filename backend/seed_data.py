@@ -27,41 +27,44 @@ def fetch_tmdb_genres():
         print(f"Error fetching genres: {e}")
         return {}
 
-def fetch_tmdb_popular_movies(pages=10):
+def fetch_tmdb_popular_movies(pages_per_lang=4):
     movies = []
     genre_map = fetch_tmdb_genres()
     seen_ids = set()
+    languages = ['en', 'te', 'hi']
     
-    for page in range(1, pages + 1):
-        url = f"{settings.TMDB_BASE_URL}/movie/popular?api_key={settings.TMDB_API_KEY}&page={page}"
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            results = response.json().get("results", [])
-            for item in results:
-                if not item.get("poster_path"):
-                    continue
-                
-                tmdb_id = item["id"]
-                if tmdb_id in seen_ids:
-                    continue
-                seen_ids.add(tmdb_id)
-                
-                # Map genre IDs to names
-                genre_names = [genre_map.get(gid) for gid in item.get("genre_ids", []) if genre_map.get(gid)]
-                
-                movies.append({
-                    "tmdb_id": tmdb_id,
-                    "title": item["title"],
-                    "genre": ",".join(genre_names),
-                    "description": item.get("overview", ""),
-                    "poster_url": f"{settings.TMDB_IMAGE_BASE}/w500{item['poster_path']}",
-                    "backdrop_url": f"{settings.TMDB_IMAGE_BASE}/original{item['backdrop_path']}" if item.get("backdrop_path") else None,
-                    "release_year": int(item["release_date"][:4]) if item.get("release_date") else 2024,
-                    "vote_average": item.get("vote_average", 0.0)
-                })
-        except Exception as e:
-            print(f"Error fetching movies page {page}: {e}")
+    for lang in languages:
+        for page in range(1, pages_per_lang + 1):
+            url = f"{settings.TMDB_BASE_URL}/discover/movie?api_key={settings.TMDB_API_KEY}&with_original_language={lang}&sort_by=popularity.desc&page={page}"
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                results = response.json().get("results", [])
+                for item in results:
+                    if not item.get("poster_path"):
+                        continue
+                    
+                    tmdb_id = item["id"]
+                    if tmdb_id in seen_ids:
+                        continue
+                    seen_ids.add(tmdb_id)
+                    
+                    # Map genre IDs to names
+                    genre_names = [genre_map.get(gid) for gid in item.get("genre_ids", []) if genre_map.get(gid)]
+                    
+                    movies.append({
+                        "tmdb_id": tmdb_id,
+                        "title": item["title"],
+                        "genre": ",".join(genre_names),
+                        "description": item.get("overview", ""),
+                        "poster_url": f"{settings.TMDB_IMAGE_BASE}/w500{item['poster_path']}",
+                        "backdrop_url": f"{settings.TMDB_IMAGE_BASE}/original{item['backdrop_path']}" if item.get("backdrop_path") else None,
+                        "release_year": int(item["release_date"][:4]) if item.get("release_date") else 2024,
+                        "vote_average": item.get("vote_average", 0.0),
+                        "language": lang
+                    })
+            except Exception as e:
+                print(f"Error fetching {lang} movies page {page}: {e}")
     
     return movies
 
@@ -96,7 +99,8 @@ def seed_data():
             poster_url=m_data["poster_url"],
             backdrop_url=m_data["backdrop_url"],
             release_year=m_data["release_year"],
-            vote_average=m_data["vote_average"]
+            vote_average=m_data["vote_average"],
+            language=m_data["language"]
         )
         db.add(movie)
         db_movies.append(movie)

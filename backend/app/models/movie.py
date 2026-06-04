@@ -14,3 +14,4 @@ class Movie(Base):
     vote_average = Column(Float, default=0.0)
     runtime = Column(Integer, default=0)
     tagline = Column(String, default="")
+    language = Column(String, default="en", index=True)

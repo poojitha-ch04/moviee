@@ -12,6 +12,7 @@ class MovieBase(BaseModel):
     vote_average: Optional[float] = 0.0
     runtime: Optional[int] = 0
     tagline: Optional[str] = ""
+    language: Optional[str] = "en"
 
 class MovieResponse(MovieBase):
     id: int
