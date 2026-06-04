@@ -30,6 +30,7 @@ def fetch_tmdb_genres():
 def fetch_tmdb_popular_movies(pages=10):
     movies = []
     genre_map = fetch_tmdb_genres()
+    seen_ids = set()
     
     for page in range(1, pages + 1):
         url = f"{settings.TMDB_BASE_URL}/movie/popular?api_key={settings.TMDB_API_KEY}&page={page}"
@@ -41,11 +42,16 @@ def fetch_tmdb_popular_movies(pages=10):
                 if not item.get("poster_path"):
                     continue
                 
+                tmdb_id = item["id"]
+                if tmdb_id in seen_ids:
+                    continue
+                seen_ids.add(tmdb_id)
+                
                 # Map genre IDs to names
                 genre_names = [genre_map.get(gid) for gid in item.get("genre_ids", []) if genre_map.get(gid)]
                 
                 movies.append({
-                    "tmdb_id": item["id"],
+                    "tmdb_id": tmdb_id,
                     "title": item["title"],
                     "genre": ",".join(genre_names),
                     "description": item.get("overview", ""),
