@@ -82,7 +82,7 @@ def seed_data():
 
     # 2. Fetch and seed real movies from TMDB
     print("Fetching popular movies from TMDB...")
-    tmdb_movies = fetch_tmdb_popular_movies(pages=10) # 200 movies
+    tmdb_movies = fetch_tmdb_popular_movies(pages_per_lang=4) # 4 pages per language
     
     if not tmdb_movies:
         print("Failed to fetch movies from TMDB. Aborting.")
