@@ -13,7 +13,10 @@ from sqlalchemy import text
 
 fake = Faker()
 
-# Create tables if they don't exist
+# Drop and recreate tables to ensure schema changes (like the new 'language' column) are applied
+print("Dropping old tables...")
+Base.metadata.drop_all(bind=engine)
+print("Creating new tables...")
 Base.metadata.create_all(bind=engine)
 
 def fetch_tmdb_genres():
@@ -71,14 +74,8 @@ def fetch_tmdb_popular_movies(pages_per_lang=4):
 def seed_data():
     db = SessionLocal()
     
-    # 1. Clear existing data
-    print("Clearing existing data...")
-    # Delete in correct order to respect foreign keys
-    db.query(Watchlist).delete()
-    db.query(Rating).delete()
-    db.query(Movie).delete()
-    db.query(User).delete()
-    db.commit()
+    # 1. Clear existing data (Already handled by drop_all at the top)
+    print("Database schema successfully recreated.")
 
     # 2. Fetch and seed real movies from TMDB
     print("Fetching popular movies from TMDB...")
