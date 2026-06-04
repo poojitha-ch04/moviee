@@ -190,10 +190,27 @@ def get_movie_trailer(movie_id: int, db: Session = Depends(get_db)):
             if video.get("site") == "YouTube" and video.get("type") == "Teaser":
                 return {"key": video.get("key"), "name": video.get("name")}
                 
+        # If still no trailer or teaser, return ANY YouTube video attached
+        for video in videos:
+            if video.get("site") == "YouTube":
+                return {"key": video.get("key"), "name": video.get("name")}
+                
     except Exception as e:
         print(f"Error fetching trailer from TMDB: {e}")
         
-    # If TMDB has no video or request fails, return fallback
+    # If TMDB has no video or request fails, search YouTube directly
+    try:
+        from youtubesearchpython import VideosSearch
+        search = VideosSearch(f"{movie.title} {movie.release_year} trailer", limit=1)
+        results = search.result()
+        if results and results.get('result') and len(results['result']) > 0:
+            video_id = results['result'][0]['id']
+            video_title = results['result'][0]['title']
+            return {"key": video_id, "name": video_title}
+    except Exception as e:
+        print(f"Error searching YouTube directly: {e}")
+        
+    # Final fallback if absolutely everything fails
     return {"key": fallback_key, "name": f"{movie.title} Trailer (Fallback)"}
 
 @router.get("/{movie_id}/similar", response_model=List[MovieResponse])
